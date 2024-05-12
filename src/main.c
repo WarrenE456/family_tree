@@ -8,8 +8,8 @@
 #define FPS 4
 
 /* TODO
- * Menu to display genotype
- * Menu for init traits
+ * Add more menu
+ * Menu for init. traits
  * Menu for phenotype
  * Fix random number chaning num of children when deltaYear changed
  * Screen buffer
@@ -60,6 +60,7 @@ int main(void)
 			time_t start = clock();
 			rawEnd();
 			system("clear");
+			printf("CONTROLS: q(quit), SPACE-BAR(pause)\n");
 			printf("[PLAYING]\n");
 			printf("Years passed: %.1f\n\n", yearsPassed);
 			NtreeHeadDisplay(&tree, -1);
@@ -86,6 +87,7 @@ int main(void)
 		{
 			rawEnd();
 			system("clear");
+			printf("CONTROLS: q(quit), SPACE-BAR(resume), i(inspect), j(go-up), k(go-down)\n");
 			printf("[PAUSED]\n");
 			printf("Years passed: %.1f\n\n", yearsPassed);
 			unsigned numMembers = NtreeHeadDisplay(&tree, cursor);
@@ -132,6 +134,7 @@ int main(void)
 			Ntree family = NtreeHeadGetFamily(&tree, cursor);
 			rawEnd();
 			system("clear");
+			printf("CONTROLS: q(quit), b(back), i(inspect), j(go-up), k(go-down)\n");
 			printf("%c%c\n", (family.blood.alleles[0] == DOMINANT) ? 'A' : 'a', (family.blood.alleles[1] == DOMINANT) ? 'A' : 'a');
 			rawBegin();
 
