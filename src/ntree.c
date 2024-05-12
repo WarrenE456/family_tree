@@ -244,3 +244,34 @@ Ntree NtreeHeadGetFamily(Ntree* self, unsigned index)
 	Ntree family = *NtreeGetFamily(self, index).foundFamily;
 	return family;
 }
+
+void NtreeDisplayFamily(Ntree* const self)
+{
+	printf("Married: %s\n\n", self->married ? "true" : "false");
+
+	printf(
+		"Related by blood:\n"
+		"	Sex: %s\n"
+		"	Age: %.1f\n"
+		"	Genotype: %c%c\n",
+		(self->blood.sex == MALE) ? "male" : "female", self->blood.age,
+		(self->blood.alleles[0] == DOMINANT) ? 'A' : 'a',  (self->blood.alleles[1] == DOMINANT) ? 'A' : 'a');
+
+	if (self->married) {
+		printf(
+			"Related by blood:\n"
+			"	Sex: %s\n"
+			"	Age: %.1f\n"
+			"	Genotype: %c%c\n",
+			(self->spouse.sex == MALE) ? "male" : "female", self->spouse.age,
+			(self->spouse.alleles[0] == DOMINANT) ? 'A' : 'a',  (self->spouse.alleles[1] == DOMINANT) ? 'A' : 'a');
+	}
+
+	printf("Offspring:\n");
+	for (int i = 0; i < self->nextGen.len; ++i) {
+			Person child = self->nextGen.data[i].blood;
+			printf("%d) %s %.1f; %c%c\n",
+			i + 1, (child.sex == MALE) ? "Male" : "Female", child.age,
+			(child.alleles[0] == DOMINANT) ? 'A' : 'a', (child.alleles[0] == DOMINANT) ? 'A' : 'a');
+	}
+}

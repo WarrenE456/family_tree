@@ -56,5 +56,6 @@ void NtreeHaveChild(Ntree* self);
 unsigned NtreeHeadDisplay(Ntree* self, int cursor);
 void NtreeUpdate(Ntree* self, double deltaYears);
 Ntree NtreeHeadGetFamily(Ntree* self, unsigned index);
+void NtreeDisplayFamily(Ntree* self);
 
 #endif

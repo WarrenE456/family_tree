@@ -135,7 +135,7 @@ int main(void)
 			rawEnd();
 			system("clear");
 			printf("CONTROLS: q(quit), b(back), i(inspect), j(go-up), k(go-down)\n");
-			printf("%c%c\n", (family.blood.alleles[0] == DOMINANT) ? 'A' : 'a', (family.blood.alleles[1] == DOMINANT) ? 'A' : 'a');
+			NtreeDisplayFamily(&family);
 			rawBegin();
 
 			bool shouldContinueInputLoop = true;
@@ -154,7 +154,6 @@ int main(void)
 					break;
 				}
 			}
-
 		}
 	}
 
