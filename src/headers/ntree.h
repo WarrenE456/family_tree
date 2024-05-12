@@ -53,7 +53,8 @@ typedef struct Ntree
 void NtreeNew(Ntree* self, Person blood);
 void NtreeMary(Ntree* self, Person spouse);
 void NtreeHaveChild(Ntree* self);
-void NtreeDisplayHead(Ntree* self);
+unsigned NtreeHeadDisplay(Ntree* self, int cursor);
 void NtreeUpdate(Ntree* self, double deltaYears);
+Ntree NtreeHeadGetFamily(Ntree* self, unsigned index);
 
 #endif

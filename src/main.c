@@ -8,8 +8,11 @@
 #define FPS 4
 
 /* TODO
- * Event polling
+ * Menu to display genotype
  * Menu for init traits
+ * Menu for phenotype
+ * Fix random number chaning num of children when deltaYear changed
+ * Screen buffer
  * Sex linked traits
  * Multiple traits
  * Death
@@ -18,11 +21,14 @@
 typedef enum {
 	PAUSED = 0,
 	PLAYING,
+	STATS,
 } Mode;
 
 void* pollEvents(void* args) {
 	char* input = (char*)args;
-	while (1) *input = getchar();
+	while (1) {
+		*input = getchar();
+	}
 }
 
 int main(void)
@@ -36,14 +42,15 @@ int main(void)
 	NtreeNew(&tree, female);
 	NtreeMary(&tree, male);
 
-	double deltaYears = 13;
+	double deltaYears = 3;
 	double yearsPassed = 0;
 	Mode mode = PLAYING;
 
-	char input;
+	int input;
 	pthread_t eventsThread;
 	pthread_create(&eventsThread, NULL, pollEvents, &input);
 
+	int cursor = 0;
 	bool gameShouldContinue = true;
 
 	rawBegin();
@@ -53,8 +60,9 @@ int main(void)
 			time_t start = clock();
 			rawEnd();
 			system("clear");
+			printf("[PLAYING]\n");
 			printf("Years passed: %.1f\n\n", yearsPassed);
-			NtreeDisplayHead(&tree);
+			NtreeHeadDisplay(&tree, -1);
 			rawBegin();
 
 			NtreeUpdate(&tree, deltaYears / FPS);
@@ -65,25 +73,85 @@ int main(void)
 				switch (temp) {
 					case 'q':
 						gameShouldContinue = false;
-						break;
+					break;
+					case ' ':
+						mode = PAUSED;
+						cursor = 0;
+					break;
 				}
+				input = -1;
 			} while ((double)(clock() - start) / CLOCKS_PER_SEC < 1.0 / FPS);
 		}
-		if (mode == PAUSED)
+		else if (mode == PAUSED)
 		{
-
 			rawEnd();
 			system("clear");
+			printf("[PAUSED]\n");
 			printf("Years passed: %.1f\n\n", yearsPassed);
-			NtreeDisplayHead(&tree);
+			unsigned numMembers = NtreeHeadDisplay(&tree, cursor);
 			rawBegin();
-			
-			char temp = input; // Ensure that input does not change mid switch-case by making a copy
-			switch (temp) {
-				case 'q':
-					gameShouldContinue = false;
+
+			bool shouldContinueInputLoop = true;
+			while (shouldContinueInputLoop)
+			{
+				char temp = input; // Ensure that input does not change mid switch-case by making a copy
+				switch (temp) {
+					case 'q':
+						shouldContinueInputLoop = false;
+						gameShouldContinue = false;
+						input = -1;
 					break;
+					case ' ':
+						shouldContinueInputLoop = false;
+						mode = PLAYING;
+						input = -1;
+					break;
+					case 'i':
+						shouldContinueInputLoop = false;
+						mode = STATS;
+						input = -1;
+					break;
+					case 'j':
+						shouldContinueInputLoop = false;
+						++cursor;
+						input = -1;
+					break;
+					case 'k':
+						shouldContinueInputLoop = false;
+						--cursor;
+						input = -1;
+					break;
+				}
 			}
+
+			cursor = cursor > 0 ? cursor : 0;
+			cursor = cursor < numMembers ? cursor : numMembers - 1;
+		}
+		else if (mode == STATS)
+		{
+			Ntree family = NtreeHeadGetFamily(&tree, cursor);
+			rawEnd();
+			system("clear");
+			printf("%c%c\n", (family.blood.alleles[0] == DOMINANT) ? 'A' : 'a', (family.blood.alleles[1] == DOMINANT) ? 'A' : 'a');
+			rawBegin();
+
+			bool shouldContinueInputLoop = true;
+			while (shouldContinueInputLoop)
+			{
+				char temp = input; // Ensure that input does not change mid switch-case by making a copy
+				switch (temp) {
+					case 'q':
+						shouldContinueInputLoop = false;
+						gameShouldContinue = false;
+						input = -1;
+					case 'b':
+						shouldContinueInputLoop = false;
+						mode = PAUSED;
+						input = -1;
+					break;
+				}
+			}
+
 		}
 	}
 

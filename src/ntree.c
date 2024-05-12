@@ -105,7 +105,7 @@ void NtreeHaveChild(Ntree* self)
 	OffspringAppend(&self->nextGen, newFamily);
 }
 
-static void NtreeDisplay(Ntree* self, unsigned depth, Flags* isLast)
+static unsigned NtreeDisplay(Ntree* self, unsigned depth, Flags* isLast, int num, int cursor)
 {
 	for (int i = 1; i < depth; ++i) {
 		if (isLast->data[i]) {
@@ -114,7 +114,6 @@ static void NtreeDisplay(Ntree* self, unsigned depth, Flags* isLast)
 			printf("│   ");
 		}
 	}
-	
 	if (depth > 0) {
 		if (isLast->data[depth] == true) {
 			printf("└──%c%c", self->blood.alleles[0], self->blood.alleles[1]);
@@ -123,17 +122,18 @@ static void NtreeDisplay(Ntree* self, unsigned depth, Flags* isLast)
 			printf("├──%c%c", self->blood.alleles[0], self->blood.alleles[1]);
 		}
 	}
-
-	for (int i = 0; i < 2; ++i)
+	for (int i = 0; i < 2; ++i) {
 		switch (self->blood.alleles[i]) {
 			case DOMINANT:
 				printf("A"); break;
 			case RECESSIVE:
 				printf("a"); break;
 		}
-
+	}
+	if (num == cursor) printf(" <");
 	printf("\n");
 
+	unsigned numMembers = 1;
 	FlagsChangeFlag(isLast, false, depth + 1);
 	for (int i = 0; i < self->nextGen.len; ++i)
 	{
@@ -141,15 +141,16 @@ static void NtreeDisplay(Ntree* self, unsigned depth, Flags* isLast)
 		{
 			FlagsChangeFlag(isLast, true, depth + 1);
 		}
-		NtreeDisplay(&self->nextGen.data[i], depth + 1, isLast);
+		numMembers += NtreeDisplay(&self->nextGen.data[i], depth + 1, isLast, num + numMembers, cursor);
 	}
+	return numMembers;
 }
 
-void NtreeDisplayHead(Ntree* self)
+unsigned NtreeHeadDisplay(Ntree* self, int cursor)
 {
 	Flags isLast; FlagsNew(&isLast);
 	FlagsChangeFlag(&isLast, true, 0);
-	NtreeDisplay(self, 0, &isLast);
+	return NtreeDisplay(self, 0, &isLast, 0, cursor);
 }
 
 static const double standardDeviation = 3.3;
@@ -209,4 +210,37 @@ void NtreeUpdate(Ntree* self, double deltaYears)
 			NtreeMary(self, spouse);
 		}
 	}
+}
+
+typedef struct {
+	Ntree* foundFamily;
+	int numMembersOfBranch;
+} GetPersonResult;
+
+static GetPersonResult NtreeGetFamily(Ntree *self, unsigned int index)
+{
+	typedef GetPersonResult Result;
+	unsigned numberOfPeopleInBranch = 0;
+
+	if (index - numberOfPeopleInBranch == 0) {
+		Result result = {self, -1};
+		return result;
+	}
+	++numberOfPeopleInBranch;
+
+	for (int i = 0; i < self->nextGen.len; ++i)
+	{
+		Result result = NtreeGetFamily(&self->nextGen.data[i], index - numberOfPeopleInBranch);
+		if (result.foundFamily) return result;
+		numberOfPeopleInBranch += result.numMembersOfBranch;
+	}
+
+	Result finalResult = { NULL, numberOfPeopleInBranch };
+	return finalResult;
+}
+
+Ntree NtreeHeadGetFamily(Ntree* self, unsigned index)
+{
+	Ntree family = *NtreeGetFamily(self, index).foundFamily;
+	return family;
 }
