@@ -84,8 +84,7 @@ int main(void) {
         } else if (mode == PAUSED) {
             rawEnd();
             system("clear");
-            printf("CONTROLS: q(quit), SPACE-BAR(resume), i(inspect), j(go-up), "
-                   "k(go-down)\n");
+            printf("CONTROLS: q(quit), SPACE-BAR(resume), i(inspect), j(go-up), k(go-down)\n");
             printf("[PAUSED]\n");
             printf("Years passed: %.1f\n\n", yearsPassed);
             unsigned numMembers = NtreeHeadDisplay(&tree, cursor);
@@ -130,7 +129,7 @@ int main(void) {
             Ntree family = NtreeHeadGetFamily(&tree, cursor);
             rawEnd();
             system("clear");
-            printf("CONTROLS: q(quit), b(back), i(inspect), j(go-up), k(go-down)\n");
+            printf("CONTROLS: q(quit), b(back)\n");
             NtreeDisplayFamily(&family);
             rawBegin();
 

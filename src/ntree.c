@@ -105,7 +105,7 @@ void NtreeHaveChild(Ntree *self) {
         newGenotype[1] = maleAllele;
     }
 
-    Traits childsTraits;
+    Traits childsTraits; TraitsNew(&childsTraits);
     for (int i = 0; i < self->blood.traits.lenAuto; ++i)
     {
         int genotype[2];
@@ -144,8 +144,7 @@ void NtreeHaveChild(Ntree *self) {
     OffspringAppend(&self->nextGen, newFamily);
 }
 
-static unsigned NtreeDisplay(Ntree *self, unsigned depth, Flags *isLast,
-                             int num, int cursor) {
+static unsigned NtreeDisplay(Ntree *self, unsigned depth, Flags *isLast, int num, int cursor) {
     for (int i = 1; i < depth; ++i) {
         if (isLast->data[i]) {
             printf("    ");
@@ -155,21 +154,24 @@ static unsigned NtreeDisplay(Ntree *self, unsigned depth, Flags *isLast,
     }
     if (depth > 0) {
         if (isLast->data[depth] == true) {
-            printf("└──%c%c", self->blood.alleles[0], self->blood.alleles[1]);
+            printf("└──");
         } else {
-            printf("├──%c%c", self->blood.alleles[0], self->blood.alleles[1]);
+            printf("├──");
         }
     }
-    for (int i = 0; i < 2; ++i) {
-        switch (self->blood.alleles[i]) {
-            case DOMINANT:
-                printf("A");
-                break;
-            case RECESSIVE:
-                printf("a");
-                break;
-        }
+
+    char glyph[3];
+    glyph[2] = '\0';
+    if (self->married) {
+        glyph[0] = '#';
+        glyph[1] = '0';
     }
+    else {
+        glyph[0] = self->blood.sex == MALE ? '#' : '0';
+        glyph[1] = ' ';
+    }
+    printf("%s", glyph);
+
     if (num == cursor)
         printf(" <");
     printf("\n");
@@ -283,34 +285,49 @@ Ntree NtreeHeadGetFamily(Ntree *self, unsigned index) {
     return family;
 }
 
+static void displayTraits(Traits traits) {
+    for (int i = 0; i < traits.lenAuto; ++i)
+    {
+        Trait trait = traits.autosomal[i];
+        printf("\t%c%c -> %s\n",
+               (trait.alleles[0] == DOMINANT) ? 'A' : 'a',
+               (trait.alleles[1] == DOMINANT) ? 'A' : 'a',
+               trait.isDominant ? trait.dominant : trait.recessive);
+    }
+
+    for (int i = 0; i < traits.lenX; ++i)
+    {
+        Trait trait = traits.xLinked[i];
+        printf("\t%s%s -> %s\n",
+               (trait.alleles[0] == DOMINANT_X) ? "X^A" : (trait.alleles[0] == RECESSIVE_X) ? "X^a" : "Y",
+               (trait.alleles[1] == DOMINANT_X) ? "X^A" : (trait.alleles[1] == RECESSIVE_X) ? "X^a" : "Y",
+               trait.isDominant ? trait.dominant : trait.recessive);
+    }
+}
 void NtreeDisplayFamily(Ntree *const self) {
     printf("Married: %s\n\n", self->married ? "true" : "false");
 
     printf("Related by blood:\n"
-           "	Sex: %s\n"
-           "	Age: %.1f\n"
-           "	Genotype: %c%c\n",
-           (self->blood.sex == MALE) ? "male" : "female", self->blood.age,
-           (self->blood.alleles[0] == DOMINANT) ? 'A' : 'a',
-           (self->blood.alleles[1] == DOMINANT) ? 'A' : 'a');
+           "\tSex: %s\n"
+           "\tAge: %.1f\n",
+           (self->blood.sex == MALE) ? "male" : "female", self->blood.age);
+
+    displayTraits(self->blood.traits);
 
     if (self->married) {
-        printf("Related by blood:\n"
+        printf("Married into family:\n"
                "	Sex: %s\n"
-               "	Age: %.1f\n"
-               "	Genotype: %c%c\n",
-               (self->spouse.sex == MALE) ? "male" : "female", self->spouse.age,
-               (self->spouse.alleles[0] == DOMINANT) ? 'A' : 'a',
-               (self->spouse.alleles[1] == DOMINANT) ? 'A' : 'a');
+               "	Age: %.1f\n",
+               (self->spouse.sex == MALE) ? "male" : "female", self->spouse.age);
     }
+
+    displayTraits(self->spouse.traits);
 
     printf("Offspring:\n");
     for (int i = 0; i < self->nextGen.len; ++i) {
         Person child = self->nextGen.data[i].blood;
-        printf("%d) %s %.1f; %c%c\n", i + 1,
-               (child.sex == MALE) ? "Male" : "Female", child.age,
-               (child.alleles[0] == DOMINANT) ? 'A' : 'a',
-               (child.alleles[0] == DOMINANT) ? 'A' : 'a');
+        printf("%d) %s %.1f;\n", i + 1, (child.sex == MALE) ? "Male" : "Female", child.age);
+        displayTraits(child.traits);
     }
 }
 
