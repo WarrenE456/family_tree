@@ -45,11 +45,10 @@ typedef enum {
 typedef struct {
     double age;
     Sex sex;
-    Allele alleles[2];
     Traits traits;
 } Person;
 
-void PersonFrom(Person *self, unsigned age, Sex sex, Allele *alleles, Traits traits);
+void PersonFrom(Person *self, unsigned age, Sex sex, Traits traits);
 
 typedef struct {
     unsigned len;
