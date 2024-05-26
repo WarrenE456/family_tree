@@ -1,4 +1,4 @@
-Family Tree
+# Family Tree
 Given the genotype of a male and female, this program can generate a pedigree of their possible offspring.
 # Requirements
 To run this program, you must have CMake, Make, and Git. Additionally, you must set up termio.h. This program was developed and tested on Debian Linux, however, it should work on all Unix-based operating systems hopefully.
