@@ -9,11 +9,9 @@
 #define INTEGRAL_EPOCH 128
 #define PI 3.14159
 
-void PersonFrom(Person *self, unsigned age, Sex sex, Allele *alleles, Traits traits) {
+void PersonFrom(Person *self, unsigned age, Sex sex, Traits traits) {
     self->age = age;
     self->sex = sex;
-    self->alleles[0] = alleles[0];
-    self->alleles[1] = alleles[1];
     self->traits = traits;
 }
 
@@ -56,33 +54,13 @@ void NtreeMary(Ntree *self, Person spouse) {
 
 // Robert Jenkins' 96 bit Mix Function
 unsigned long mix(unsigned long a, unsigned long b, unsigned long c) {
-    a = a - b;
-    a = a - c;
-    a = a ^ (c >> 13);
-    b = b - c;
-    b = b - a;
-    b = b ^ (a << 8);
-    c = c - a;
-    c = c - b;
-    c = c ^ (b >> 13);
-    a = a - b;
-    a = a - c;
-    a = a ^ (c >> 12);
-    b = b - c;
-    b = b - a;
-    b = b ^ (a << 16);
-    c = c - a;
-    c = c - b;
-    c = c ^ (b >> 5);
-    a = a - b;
-    a = a - c;
-    a = a ^ (c >> 3);
-    b = b - c;
-    b = b - a;
-    b = b ^ (a << 10);
-    c = c - a;
-    c = c - b;
-    c = c ^ (b >> 15);
+    a = a - b; a = a - c; a = a ^ (c >> 13); b = b - c;
+    b = b - a; b = b ^ (a << 8); c = c - a; c = c - b;
+    c = c ^ (b >> 13); a = a - b; a = a - c; a = a ^ (c >> 12);
+    b = b - c; b = b - a; b = b ^ (a << 16); c = c - a;
+    c = c - b; c = c ^ (b >> 5); a = a - b; a = a - c;
+    a = a ^ (c >> 3); b = b - c; b = b - a; b = b ^ (a << 10);
+    c = c - a; c = c - b; c = c ^ (b >> 15);
     return c;
 }
 
@@ -93,37 +71,28 @@ static int randomNumber(int min, int max) {
 }
 
 void NtreeHaveChild(Ntree *self) {
-    Allele femaleAllele = randomNumber(0, 2);
-    Allele maleAllele = randomNumber(0, 2);
-
-    Allele newGenotype[2];
-    if (maleAllele == DOMINANT) {
-        newGenotype[0] = maleAllele;
-        newGenotype[1] = femaleAllele;
-    } else {
-        newGenotype[0] = femaleAllele;
-        newGenotype[1] = maleAllele;
-    }
-
     Traits childsTraits; TraitsNew(&childsTraits);
     for (int i = 0; i < self->blood.traits.lenAuto; ++i)
     {
         int genotype[2];
         genotype[0] = self->blood.traits.autosomal[i].alleles[randomNumber(0, 1)];
-        genotype[1] = self->blood.traits.autosomal[i].alleles[randomNumber(0, 1)];
+        genotype[1] = self->spouse.traits.autosomal[i].alleles[randomNumber(0, 1)];
         Trait trait; TraitFrom(&trait, self->blood.traits.autosomal[i].dominant,
                                self->blood.traits.autosomal[i].recessive,
                                genotype[0], genotype[1]);
         TraitsAppend(&childsTraits, trait, true);
     }
 
+    Person dad = (self->blood.sex == MALE) ?  self->blood : self->spouse;
+    Person mom = (self->blood.sex == FEMALE) ?  self->blood : self->spouse;
     unsigned sexChromosomeFromMom = randomNumber(0, 2);
     unsigned sexChromosomeFromDad = randomNumber(0, 2);
+
     for (int i = 0; i < self->blood.traits.lenX; ++i)
     {
         int genotype[2];
-        genotype[0] = self->blood.traits.xLinked[i].alleles[sexChromosomeFromMom];
-        genotype[1] = self->blood.traits.xLinked[i].alleles[sexChromosomeFromMom];
+        genotype[0] = dad.traits.xLinked[i].alleles[sexChromosomeFromMom];
+        genotype[1] = mom.traits.xLinked[i].alleles[sexChromosomeFromDad];
         Trait trait; TraitFrom(&trait, self->blood.traits.xLinked[i].dominant,
                                self->blood.traits.xLinked[i].recessive,
                                genotype[0], genotype[1]);
@@ -134,10 +103,10 @@ void NtreeHaveChild(Ntree *self) {
     if (self->blood.traits.lenX == 0)
         sex = randomNumber(0, 2);
     else
-        sex = (sexChromosomeFromDad == Y) ? MALE : FEMALE;
+        sex = (childsTraits.xLinked->alleles[0] == Y || childsTraits.xLinked->alleles[1] == Y) ? MALE : FEMALE;
 
     Person newChild;
-    PersonFrom(&newChild, 0, sex, newGenotype, childsTraits);
+    PersonFrom(&newChild, 0, sex, childsTraits);
     Ntree newFamily;
     NtreeNew(&newFamily, newChild);
 
@@ -162,6 +131,7 @@ static unsigned NtreeDisplay(Ntree *self, unsigned depth, Flags *isLast, int num
 
     char glyph[3];
     glyph[2] = '\0';
+
     if (self->married) {
         glyph[0] = '#';
         glyph[1] = '0';
@@ -219,37 +189,55 @@ static bool fate(double probability) {
         return true;
     return false;
 }
+
+const unsigned decimalPercesion = 3;
+static Person generateSpouse(Person template)
+{
+    double maxAgeDifference = 0.1 * template.age;
+    double percentAgeDifference = (double)randomNumber(-pow(10, decimalPercesion), pow(10, decimalPercesion) + 1) / pow(10, decimalPercesion);
+    double age = template.age + maxAgeDifference * percentAgeDifference;
+
+    Sex sex = (template.sex == MALE) ? FEMALE : MALE;
+
+    Traits traits; TraitsNew(&traits);
+
+    for (int i = 0; i < template.traits.lenAuto; ++i) {
+        Trait autosomalTrait;
+        TraitFrom(&autosomalTrait, template.traits.autosomal[i].dominant,
+                  template.traits.autosomal[i].recessive,
+                  randomNumber(1, 3), randomNumber(1, 3));
+        TraitsAppend(&traits, autosomalTrait, true);
+    }
+
+    for (int i = 0; i < template.traits.lenX; ++i) {
+        Trait xTrait;
+        TraitFrom(&xTrait, template.traits.xLinked[i].dominant,
+                  template.traits.xLinked[i].recessive,
+                  randomNumber(1, 3), (sex == MALE) ? Y : randomNumber(1, 3));
+        TraitsAppend(&traits, xTrait, false);
+    }
+
+    Person spouse; PersonFrom(&spouse, age, sex, traits);
+    return spouse;
+}
+
 void NtreeUpdate(Ntree *self, double deltaYears) {
     for (int i = 0; i < self->nextGen.len; ++i) {
         NtreeUpdate(&self->nextGen.data[i], deltaYears);
     }
 
-    if (self->married) {
-        double startingAge =
-            (self->blood.sex == FEMALE) ? self->blood.age : self->spouse.age;
-        self->blood.age += deltaYears;
-        self->spouse.age += deltaYears;
+    double startingAge = (self->blood.sex == FEMALE) ? self->blood.age : self->spouse.age;
 
-        if (fate(changeToHaveChild(startingAge, startingAge + deltaYears)))
-            NtreeHaveChild(self);
+    self->blood.age += deltaYears;
+    if (self->married) self->spouse.age += deltaYears;
 
-        // srand(time(NULL));
-        // int randomnum = rand() % (int)(20.0 * (1.0/deltaYears));
-        // if (randomnum == 0) {
-        // 	NtreeHaveChild(self);
-        // }
-    }
-    if (!self->married) {
-        self->blood.age += deltaYears;
-
-        int randomnum = rand() % (int)(20.0 * (1.0 / deltaYears));
-        if (randomnum == 0) {
-            self->married = true;
-            Allele genotype[2] = {randomNumber(0, 2), randomNumber(0, 2)};
-            Person spouse;
-            PersonFrom(&spouse, self->blood.age, !self->blood.sex, genotype, self->blood.traits);
+    bool shouldHaveChild = fate(changeToHaveChild(startingAge, startingAge + deltaYears));
+    if (shouldHaveChild) {
+        if (!self->married) {
+            Person spouse = generateSpouse(self->blood);
             NtreeMary(self, spouse);
         }
+        NtreeHaveChild(self);
     }
 }
 
@@ -319,9 +307,9 @@ void NtreeDisplayFamily(Ntree *const self) {
                "	Sex: %s\n"
                "	Age: %.1f\n",
                (self->spouse.sex == MALE) ? "male" : "female", self->spouse.age);
+        displayTraits(self->spouse.traits);
     }
 
-    displayTraits(self->spouse.traits);
 
     printf("Offspring:\n");
     for (int i = 0; i < self->nextGen.len; ++i) {

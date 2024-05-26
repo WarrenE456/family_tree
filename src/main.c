@@ -33,9 +33,8 @@ int main(void) {
     Traits* trait = getTraits();
 
     Person female, male;
-    Allele alleles[2] = {DOMINANT, RECESSIVE};
-    PersonFrom(&female, 18, FEMALE, alleles, trait[0]);
-    PersonFrom(&male, 18, MALE, alleles, trait[1]);
+    PersonFrom(&female, 18, FEMALE, trait[0]);
+    PersonFrom(&male, 18, MALE, trait[1]);
 
     Ntree tree;
     NtreeNew(&tree, female);
