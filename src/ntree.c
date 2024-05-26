@@ -226,12 +226,13 @@ void NtreeUpdate(Ntree *self, double deltaYears) {
         NtreeUpdate(&self->nextGen.data[i], deltaYears);
     }
 
-    double startingAge = (self->blood.sex == FEMALE) ? self->blood.age : self->spouse.age;
+    double startingAge = self->blood.age;
 
     self->blood.age += deltaYears;
     if (self->married) self->spouse.age += deltaYears;
 
     bool shouldHaveChild = fate(changeToHaveChild(startingAge, startingAge + deltaYears));
+
     if (shouldHaveChild) {
         if (!self->married) {
             Person spouse = generateSpouse(self->blood);
